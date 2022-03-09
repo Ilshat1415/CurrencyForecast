@@ -1,7 +1,11 @@
 package ru.liga.strategy;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Стратегия прогнозирования курса валют
@@ -9,13 +13,21 @@ import java.util.*;
  * на основании 7 последних курсов.
  */
 public class ArithmeticMeanForecast implements Strategy {
+    /**
+     * Количество используемых данных.
+     */
+    private static final int amountDataUse = 7;
 
     @Override
-    public Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, String period) throws IllegalArgumentException {
+    public Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, int period) {
         Map<LocalDate, Double> forecastData = new TreeMap<>();
 
-        List<Double> courses = new ArrayList<>(data.values());
-        for (int i = 1; i <= getPeriod(period); i++) {
+        List<Double> courses = data.values()
+                .stream()
+                .limit(amountDataUse)
+                .collect(Collectors.toList());
+
+        for (int i = 1; i <= period; i++) {
             Double averageRate = courses.stream()
                     .mapToDouble(d -> d)
                     .average()
@@ -23,26 +35,9 @@ public class ArithmeticMeanForecast implements Strategy {
 
             forecastData.put(LocalDate.now().plusDays(i), averageRate);
 
+            Collections.rotate(courses, 1);
             courses.set(0, averageRate);
-            Collections.rotate(courses, -1);
         }
         return forecastData;
-    }
-
-    /**
-     * Конвертирует строковое название периода прогнозирования в целочисленное значение.
-     *
-     * @param period Период прогнозирования
-     * @return Количество дней для прогноза
-     * @throws IllegalArgumentException Если период не поддерживается
-     */
-    private int getPeriod(String period) throws IllegalArgumentException {
-        if ("tomorrow".equals(period)) {
-            return 1;
-        } else if ("week".equals(period)) {
-            return 7;
-        } else {
-            throw new IllegalArgumentException();
-        }
     }
 }

@@ -15,7 +15,6 @@ public interface Strategy {
      * @param data   Данные о курсе валюты
      * @param period Период прогнозирования
      * @return Прогноз курса валюты на заданный период
-     * @throws IllegalArgumentException Если период не поддерживается
      */
-    Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, String period) throws IllegalArgumentException;
+    Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, int period);
 }

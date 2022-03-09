@@ -2,12 +2,13 @@ package ru.liga;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.liga.model.CurrencyNames;
 import ru.liga.model.Model;
 import ru.liga.strategy.ArithmeticMeanForecast;
+import ru.liga.strategy.ForecastPeriod;
 import ru.liga.strategy.Strategy;
 import ru.liga.view.View;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -50,24 +51,35 @@ public class Controller {
                 log.info("Введён не корректный запрос, повторите");
             } else {
                 if ("rate".equals(userRequests[0])) {
-                    String currencyName = userRequests[1];
-                    String period = userRequests[2];
-
                     try {
+                        CurrencyNames currencyName = CurrencyNames.valueOf(userRequests[1]);
+                        int period = getPeriod(userRequests[2]);
                         Map<LocalDate, Double> data = model.getData(currencyName);
                         Map<LocalDate, Double> forecast = strategy.getForecast(data, period);
                         view.displayForecast(forecast);
-                    } catch (IOException e) {
-                        log.error("Проблемы с чтением данных", e);
                     } catch (IllegalArgumentException e) {
-                        log.info(String.format("Прогноз на \"%s\" не поддерживается, повторите ввод", period));
-                    } catch (NullPointerException e) {
-                        log.info(String.format("Валюта \"%s\" не найдена, повторите ввод", currencyName));
+                        log.info(String.format("Некоректный ввод названия валюты - \"%s\"", userRequests[1]));
+                    } catch (RuntimeException e) {
+                        log.info(String.format("Некоректный ввод периода прогнозирования - \"%s\"", userRequests[2]));
                     }
                 } else {
                     log.info(String.format("Команда \"%s\" не поддерживается, повторите ввод", userRequests[0]));
                 }
             }
+        }
+    }
+
+    /**
+     * Конвертирует строковое название периода прогнозирования в целочисленное значение.
+     *
+     * @param periodName Название периода
+     * @return Период в числовом виде
+     */
+    private int getPeriod(String periodName) {
+        try {
+            return ForecastPeriod.valueOf(periodName.toUpperCase()).getDayCount();
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
         }
     }
 

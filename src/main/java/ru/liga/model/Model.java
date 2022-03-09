@@ -1,23 +1,19 @@
 package ru.liga.model;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Map;
 
 /**
- * Объект, который содержит в себе логику считывания данных
- * и использование стратегий прогнозирования курса валют.
+ * Объект, который содержит в себе логику считывания данных.
  */
 public interface Model {
 
     /**
-     * Считывает данные о курсе валюты из локального файла,
-     * возвращая их в виде отсортированной по дате коллекции.
+     * Возвращает данные о курсе валют в виде отсортированной по дате коллекции,
+     * от большего к меньшему.
      *
      * @param currencyName Название валюты
      * @return Данные о курсе валюты
-     * @throws IOException          Если проблемы с чтением файлов
-     * @throws NullPointerException Если валюта не найдена
      */
-    Map<LocalDate, Double> getData(String currencyName) throws IOException, NullPointerException;
+    Map<LocalDate, Double> getData(CurrencyNames currencyName);
 }
