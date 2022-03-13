@@ -50,11 +50,11 @@ public class FileSystem implements Model {
 
         for (CurrencyNames currencyName : CurrencyNames.values()) {
             try (InputStream inputStream = getClass().getResourceAsStream(String.format(FILE_PATH, currencyName.name()));
-                 BufferedReader readFile = new BufferedReader(new InputStreamReader(inputStream, "windows-1251"))) {
+                 BufferedReader readFile = new BufferedReader(new InputStreamReader(inputStream))) {
                 readFile.readLine();
                 while (readFile.ready()) {
                     String[] dateOneDay = readFile.readLine().split(";");
-                    convertDataAndPutMap(dateOneDay);
+                    convertDataAndPut(dateOneDay, currencyName);
                 }
             } catch (IOException e) {
                 log.error("Ошибка при чтении данных из файлов", e);
@@ -85,25 +85,21 @@ public class FileSystem implements Model {
     /**
      * Конвертирует данные из масива для хранения в мапе.
      *
-     * @param dateOneDay Данные одного дня
+     * @param dateOneDay   Данные одного дня
+     * @param currencyName Название валюты
      */
-    private void convertDataAndPutMap(String[] dateOneDay) {
+    private void convertDataAndPut(String[] dateOneDay, CurrencyNames currencyName) {
         int nominal = Integer.parseInt(dateOneDay[0].replaceAll("\\.", ""));
         LocalDate rateDate = LocalDate.parse(dateOneDay[1], DateTimeFormatter.ofPattern("dd.MM.y"));
         Double rate = Double.parseDouble(dateOneDay[2].replace(",", ".")
-                .replaceAll("\"", ""))
-                / nominal;
-        switch (dateOneDay[3]) {
-            case "Армянский драм":
-                AMD_DATE.put(rateDate, rate);
-            case "Болгарский лев":
-                BGN_DATE.put(rateDate, rate);
-            case "Евро":
-                EUR_DATE.put(rateDate, rate);
-            case "Турецкая лира":
-                TRY_DATE.put(rateDate, rate);
-            case "Доллар США":
-                USD_DATE.put(rateDate, rate);
-        }
+                .replaceAll("\"", "")) / nominal;
+
+        do {
+            getData(currencyName).put(rateDate, rate);
+            if (getData(currencyName).size() == 1) {
+                break;
+            }
+            rateDate = rateDate.plusDays(1);
+        } while (!getData(currencyName).containsKey(rateDate));
     }
 }

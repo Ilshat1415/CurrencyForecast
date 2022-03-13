@@ -13,8 +13,9 @@ public interface Strategy {
      * возвращая отсортированную по дате коллекцию.
      *
      * @param data   Данные о курсе валюты
+     * @param date   Дата прогноза
      * @param period Период прогнозирования
      * @return Прогноз курса валюты на заданный период
      */
-    Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, int period);
+    Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, LocalDate date, int period);
 }

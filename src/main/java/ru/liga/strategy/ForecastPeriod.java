@@ -7,7 +7,7 @@ public enum ForecastPeriod {
     /**
      * Завтрашний день
      */
-    TOMORROW(1),
+    MONTH(30),
     /**
      * Неделя или семь дней
      */

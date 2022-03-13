@@ -4,12 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.liga.model.CurrencyNames;
 import ru.liga.model.Model;
-import ru.liga.strategy.ArithmeticMeanForecast;
+import ru.liga.strategy.AlgorithmNames;
 import ru.liga.strategy.ForecastPeriod;
 import ru.liga.strategy.Strategy;
 import ru.liga.view.View;
+import ru.liga.view.Views;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 
 /**
@@ -18,6 +21,7 @@ import java.util.Map;
  * и передаёт их для дальнейшего отображения результата пользователю.
  */
 public class Controller {
+    private final Logger log = LoggerFactory.getLogger(Controller.class);
     /**
      * Модель.
      */
@@ -26,7 +30,11 @@ public class Controller {
      * Вид программы.
      */
     private final View view;
-    private final Logger log = LoggerFactory.getLogger(Controller.class);
+    private CurrencyNames currencyName;
+    private LocalDate date;
+    private int countDays;
+    private AlgorithmNames alg;
+    private Views output;
 
     /**
      * Создает контроллер, устанавливая логику работы программы и её вид.
@@ -43,53 +51,85 @@ public class Controller {
      * Осуществляет прогноз курса валюты.
      */
     public void makeCurrencyForecast() {
-        Strategy strategy = new ArithmeticMeanForecast();
-
-        String[] userRequests;
-        while (!"exit".equalsIgnoreCase((userRequests = getUserRequests())[0])) {
-            if (userRequests.length != 3) {
-                log.info("Введён не корректный запрос, повторите");
-            } else {
-                if ("rate".equals(userRequests[0])) {
-                    try {
-                        CurrencyNames currencyName = CurrencyNames.valueOf(userRequests[1]);
-                        int period = getPeriod(userRequests[2]);
-                        Map<LocalDate, Double> data = model.getData(currencyName);
-                        Map<LocalDate, Double> forecast = strategy.getForecast(data, period);
-                        view.displayForecast(forecast);
-                    } catch (IllegalArgumentException e) {
-                        log.info(String.format("Некоректный ввод названия валюты - \"%s\"", userRequests[1]));
-                    } catch (RuntimeException e) {
-                        log.info(String.format("Некоректный ввод периода прогнозирования - \"%s\"", userRequests[2]));
-                    }
-                } else {
-                    log.info(String.format("Команда \"%s\" не поддерживается, повторите ввод", userRequests[0]));
-                }
-            }
-        }
-    }
-
-    /**
-     * Конвертирует строковое название периода прогнозирования в целочисленное значение.
-     *
-     * @param periodName Название периода
-     * @return Период в числовом виде
-     */
-    private int getPeriod(String periodName) {
         try {
-            return ForecastPeriod.valueOf(periodName.toUpperCase()).getDayCount();
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
+            getUserRequests();
+            Strategy strategy = alg.getStrategy();
+            Map<LocalDate, Double> data = model.getData(currencyName);
+            Map<LocalDate, Double> forecast;
+            forecast = strategy.getForecast(data, date, countDays);
+            view.displayForecast(forecast);
+        } catch (NullPointerException ignored) {
         }
     }
 
     /**
-     * Возвращает массив из запроса пользователя.
      *
-     * @return Запросы пользователя
      */
-    private String[] getUserRequests() {
-        view.writeMessage("\nВведите запрос или \"exit\" для выхода:");
-        return view.readString().split(" ");
+    private void getUserRequests() {
+        String userRequest = view.readString();
+        if ("exit".equals(userRequest)) {
+            throw new RuntimeException();
+        }
+
+        String[] userRequests = userRequest.split(" ");
+        if (userRequest.matches("rate .+ -date .+ -alg .+")) {
+            setCurrencyName(userRequests[1]);
+            setDate(userRequests[3]);
+            setAlgorithm(userRequests[5]);
+        } else if (userRequest.matches("rate .+ -period .+ -alg .+ -output .+")) {
+            setCurrencyName(userRequests[1]);
+            setPeriod(userRequests[3]);
+            setAlgorithm(userRequests[5]);
+            setOutput(userRequests[7]);
+        } else {
+            log.info("Я вас не понимаю, повторите свой запрос.");
+        }
+    }
+
+    private void setCurrencyName(String userRequest) {
+        try {
+            currencyName = CurrencyNames.valueOf(userRequest);
+        } catch (IllegalArgumentException e) {
+            log.info(String.format("Некоректный ввод валюты - \"%s\"", userRequest));
+        }
+    }
+
+    private void setDate(String userRequest) {
+        try {
+            if ("tomorrow".equals(userRequest)) {
+                date = LocalDate.now().plusDays(1);
+            } else {
+                date = LocalDate.parse(userRequest, DateTimeFormatter.ofPattern("dd.MM.y"));
+            }
+            countDays = 1;
+        } catch (DateTimeParseException e) {
+            log.info(String.format("Некоректный ввод даты - \"%s\"", userRequest));
+        }
+    }
+
+    private void setPeriod(String userRequest) {
+        try {
+            ForecastPeriod period = ForecastPeriod.valueOf(userRequest.toUpperCase());
+            countDays = period.getDayCount();
+            date = LocalDate.now().plusDays(1);
+        } catch (IllegalArgumentException e) {
+            log.info(String.format("Некоректный ввод периода - \"%s\"", userRequest));
+        }
+    }
+
+    private void setAlgorithm(String userRequest) {
+        try {
+            alg = AlgorithmNames.valueOf(userRequest.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.info(String.format("Некоректный ввод алгоритма - \"%s\"", userRequest));
+        }
+    }
+
+    private void setOutput(String userRequest) {
+        try {
+            output = Views.valueOf(userRequest.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.info(String.format("Некоректный ввод способа вывода результата - \"%s\"", userRequest));
+        }
     }
 }
