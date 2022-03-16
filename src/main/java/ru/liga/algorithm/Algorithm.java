@@ -1,21 +1,21 @@
-package ru.liga.strategy;
+package ru.liga.algorithm;
 
 import java.time.LocalDate;
 import java.util.Map;
 
 /**
- * Объект стратегии, который содержит логику прогнозирования курса валют.
+ * Алгоритм, который содержит логику прогнозирования курса валют.
  */
-public interface Strategy {
+public interface Algorithm {
 
     /**
      * Совершает прогноз курса валюты на заданный период,
      * возвращая отсортированную по дате коллекцию.
      *
      * @param data   Данные о курсе валюты
+     * @param date   Дата прогноза
      * @param period Период прогнозирования
      * @return Прогноз курса валюты на заданный период
-     * @throws IllegalArgumentException Если период не поддерживается
      */
-    Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, String period) throws IllegalArgumentException;
+    Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, LocalDate date, int period);
 }

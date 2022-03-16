@@ -1,32 +1,27 @@
 package ru.liga.view;
 
+import ru.liga.model.CurrencyName;
+
 import java.time.LocalDate;
 import java.util.Map;
 
 /**
- * Объект, который отвечает за отображение пользователю результата работы программы,
- * а так же содержит методы работы с данным представлением.
+ * Класс, который отвечает за вид результата прогноза, который будут представлен пользователю.
  */
 public interface View {
 
     /**
-     * Вывод прогноз курса валют пользователю в удобном формате.
+     * Подготовка результатов прогноза к отображению пользователю.
      *
-     * @param forecastData Прогноз курса валюты
+     * @param currencyName название валюты
+     * @param forecastData прогноз курса валюты
      */
-    void displayForecast(Map<LocalDate, Double> forecastData);
+    void preparingResults(CurrencyName currencyName, Map<LocalDate, Double> forecastData);
 
     /**
-     * Отображает пользователю сообщение.
+     * Возвращает результат прогноза в необходимом представлении.
      *
-     * @param message Сообщение
+     * @return результат прогноза
      */
-    void writeMessage(String message);
-
-    /**
-     * Считывает строку текста от пользователя.
-     *
-     * @return Строка
-     */
-    String readString();
+    Object getAnswer();
 }
