@@ -1,4 +1,4 @@
-package ru.liga.strategy;
+package ru.liga.algorithm;
 
 /**
  * Временные периоды

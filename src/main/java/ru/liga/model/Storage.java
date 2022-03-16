@@ -4,9 +4,9 @@ import java.time.LocalDate;
 import java.util.Map;
 
 /**
- * Объект, который содержит в себе логику считывания данных.
+ * Хранилище, которое содержит в себе начальные данные.
  */
-public interface Model {
+public interface Storage {
 
     /**
      * Возвращает данные о курсе валют в виде отсортированной по дате коллекции,
@@ -15,5 +15,5 @@ public interface Model {
      * @param currencyName Название валюты
      * @return Данные о курсе валюты
      */
-    Map<LocalDate, Double> getData(CurrencyNames currencyName);
+    Map<LocalDate, Double> getData(CurrencyName currencyName);
 }

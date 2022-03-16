@@ -1,12 +1,12 @@
-package ru.liga.strategy;
+package ru.liga.algorithm;
 
 import java.time.LocalDate;
 import java.util.Map;
 
 /**
- * Объект стратегии, который содержит логику прогнозирования курса валют.
+ * Алгоритм, который содержит логику прогнозирования курса валют.
  */
-public interface Strategy {
+public interface Algorithm {
 
     /**
      * Совершает прогноз курса валюты на заданный период,

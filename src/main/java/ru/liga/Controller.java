@@ -1,18 +1,11 @@
 package ru.liga;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.liga.model.CurrencyNames;
-import ru.liga.model.Model;
-import ru.liga.strategy.AlgorithmNames;
-import ru.liga.strategy.ForecastPeriod;
-import ru.liga.strategy.Strategy;
-import ru.liga.view.View;
-import ru.liga.view.Views;
+import lombok.extern.slf4j.Slf4j;
+import ru.liga.model.CurrencyName;
+import ru.liga.model.FileStorage;
+import ru.liga.telegram.UserOptions;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.Map;
 
 /**
@@ -20,116 +13,43 @@ import java.util.Map;
  * Получает данные прогноза от модели, в зависимости от переданного запроса,
  * и передаёт их для дальнейшего отображения результата пользователю.
  */
+@Slf4j
 public class Controller {
-    private final Logger log = LoggerFactory.getLogger(Controller.class);
     /**
-     * Модель.
+     * Объект пользовательских параметров.
      */
-    private final Model model;
-    /**
-     * Вид программы.
-     */
-    private final View view;
-    private CurrencyNames currencyName;
-    private LocalDate date;
-    private int countDays;
-    private AlgorithmNames alg;
-    private Views output;
+    private final UserOptions userOptions;
 
     /**
-     * Создает контроллер, устанавливая логику работы программы и её вид.
+     * Создание объекта контроллера.
      *
-     * @param model Модель
-     * @param view  Вид программы
+     * @param userOptions объект пользовательских параметров
      */
-    public Controller(Model model, View view) {
-        this.model = model;
-        this.view = view;
+    public Controller(UserOptions userOptions) {
+        this.userOptions = userOptions;
     }
 
     /**
-     * Осуществляет прогноз курса валюты.
-     */
-    public void makeCurrencyForecast() {
-        try {
-            getUserRequests();
-            Strategy strategy = alg.getStrategy();
-            Map<LocalDate, Double> data = model.getData(currencyName);
-            Map<LocalDate, Double> forecast;
-            forecast = strategy.getForecast(data, date, countDays);
-            view.displayForecast(forecast);
-        } catch (NullPointerException ignored) {
-        }
-    }
-
-    /**
+     * Осуществление прогноза курса валют.
      *
+     * @return результат прогноза
      */
-    private void getUserRequests() {
-        String userRequest = view.readString();
-        if ("exit".equals(userRequest)) {
-            throw new RuntimeException();
-        }
-
-        String[] userRequests = userRequest.split(" ");
-        if (userRequest.matches("rate .+ -date .+ -alg .+")) {
-            setCurrencyName(userRequests[1]);
-            setDate(userRequests[3]);
-            setAlgorithm(userRequests[5]);
-        } else if (userRequest.matches("rate .+ -period .+ -alg .+ -output .+")) {
-            setCurrencyName(userRequests[1]);
-            setPeriod(userRequests[3]);
-            setAlgorithm(userRequests[5]);
-            setOutput(userRequests[7]);
-        } else {
-            log.info("Я вас не понимаю, повторите свой запрос.");
-        }
-    }
-
-    private void setCurrencyName(String userRequest) {
+    public Object makeCurrencyForecast() {
         try {
-            currencyName = CurrencyNames.valueOf(userRequest);
-        } catch (IllegalArgumentException e) {
-            log.info(String.format("Некоректный ввод валюты - \"%s\"", userRequest));
-        }
-    }
+            for (CurrencyName currencyName : userOptions.getCurrencyNames()) {
+                Map<LocalDate, Double> data = FileStorage.getInstance().getData(currencyName);
+                Map<LocalDate, Double> forecast = userOptions.getAlgorithm().getForecast(data, userOptions.getDate(),
+                        userOptions.getCountDays());
+                log.debug("Алгоритм {} отработал.", userOptions.getAlgorithm().getClass().getName());
 
-    private void setDate(String userRequest) {
-        try {
-            if ("tomorrow".equals(userRequest)) {
-                date = LocalDate.now().plusDays(1);
-            } else {
-                date = LocalDate.parse(userRequest, DateTimeFormatter.ofPattern("dd.MM.y"));
+                userOptions.getView().preparingResults(currencyName, forecast);
+                log.debug("Представление {}. Прогноз сформирован", userOptions.getView().getClass().getName());
             }
-            countDays = 1;
-        } catch (DateTimeParseException e) {
-            log.info(String.format("Некоректный ввод даты - \"%s\"", userRequest));
+            return userOptions.getView().getAnswer();
+        } catch (NullPointerException e) {
+            log.debug("Алгоритм {}. Возвращено null значение.", userOptions.getAlgorithm().getClass().getName());
+            return "К сожалению алгоритм \"Актуальный\" не умеет делать прогноз на такое далёкое будущее.";
         }
-    }
 
-    private void setPeriod(String userRequest) {
-        try {
-            ForecastPeriod period = ForecastPeriod.valueOf(userRequest.toUpperCase());
-            countDays = period.getDayCount();
-            date = LocalDate.now().plusDays(1);
-        } catch (IllegalArgumentException e) {
-            log.info(String.format("Некоректный ввод периода - \"%s\"", userRequest));
-        }
-    }
-
-    private void setAlgorithm(String userRequest) {
-        try {
-            alg = AlgorithmNames.valueOf(userRequest.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.info(String.format("Некоректный ввод алгоритма - \"%s\"", userRequest));
-        }
-    }
-
-    private void setOutput(String userRequest) {
-        try {
-            output = Views.valueOf(userRequest.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.info(String.format("Некоректный ввод способа вывода результата - \"%s\"", userRequest));
-        }
     }
 }

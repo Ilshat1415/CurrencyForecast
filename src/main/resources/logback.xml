@@ -15,7 +15,7 @@
             <fileNamePattern>logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
 
             <!-- keep 1 days' worth of history -->
-            <maxHistory>5</maxHistory>
+            <maxHistory>7</maxHistory>
         </rollingPolicy>
 
         <encoder>

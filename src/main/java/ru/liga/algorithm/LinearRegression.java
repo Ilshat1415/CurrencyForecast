@@ -1,4 +1,4 @@
-package ru.liga.strategy;
+package ru.liga.algorithm;
 
 /**
  * The {@code LinearRegression} class performs a simple linear regression

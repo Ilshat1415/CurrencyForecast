@@ -1,7 +1,6 @@
 package ru.liga.model;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,9 +13,22 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Обект файловой системы, который считывает данные из локальных файлов.
+ * Файловое хранилище, которое считывает данные из локальных файлов.
  */
-public class FileSystem implements Model {
+@Slf4j
+public class FileStorage implements Storage {
+
+    /**
+     * Синглтон.
+     */
+    private static class SingletonHolder {
+        public static final FileStorage HOLDER_INSTANCE = new FileStorage();
+    }
+
+    public static FileStorage getInstance() {
+        return SingletonHolder.HOLDER_INSTANCE;
+    }
+
     /**
      * Путь к локальному файлу.
      */
@@ -43,12 +55,10 @@ public class FileSystem implements Model {
     private static final Map<LocalDate, Double> USD_DATE = new TreeMap<>(Comparator.reverseOrder());
 
     /**
-     * Создание объекта файловой системы, считывает и сохраняет в удобном формате данные из файлов.
+     * Создание объекта файлового хранилища, которое сразу считывает и сохраняет в удобном формате данные из файлов.
      */
-    public FileSystem() {
-        Logger log = LoggerFactory.getLogger(FileSystem.class);
-
-        for (CurrencyNames currencyName : CurrencyNames.values()) {
+    private FileStorage() {
+        for (CurrencyName currencyName : CurrencyName.values()) {
             try (InputStream inputStream = getClass().getResourceAsStream(String.format(FILE_PATH, currencyName.name()));
                  BufferedReader readFile = new BufferedReader(new InputStreamReader(inputStream))) {
                 readFile.readLine();
@@ -57,15 +67,16 @@ public class FileSystem implements Model {
                     convertDataAndPut(dateOneDay, currencyName);
                 }
             } catch (IOException e) {
-                log.error("Ошибка при чтении данных из файлов", e);
+                log.error("Ошибка {}. Чтении данных из файлов.", e.getMessage(), e);
             } catch (NullPointerException e) {
-                log.info(String.format("Не было найдено файла с данными для %s", currencyName.name()));
+                log.error("Не было найдено файла с данными для {}", currencyName.name(), e);
             }
         }
+        log.info("Данные успешно считаны.");
     }
 
     @Override
-    public Map<LocalDate, Double> getData(CurrencyNames currencyName) {
+    public Map<LocalDate, Double> getData(CurrencyName currencyName) {
         switch (currencyName) {
             case AMD:
                 return AMD_DATE;
@@ -88,7 +99,7 @@ public class FileSystem implements Model {
      * @param dateOneDay   Данные одного дня
      * @param currencyName Название валюты
      */
-    private void convertDataAndPut(String[] dateOneDay, CurrencyNames currencyName) {
+    private void convertDataAndPut(String[] dateOneDay, CurrencyName currencyName) {
         int nominal = Integer.parseInt(dateOneDay[0].replaceAll("\\.", ""));
         LocalDate rateDate = LocalDate.parse(dateOneDay[1], DateTimeFormatter.ofPattern("dd.MM.y"));
         Double rate = Double.parseDouble(dateOneDay[2].replace(",", ".")

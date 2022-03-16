@@ -1,10 +1,21 @@
-package ru.liga.strategy;
+package ru.liga.algorithm;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
-public class AlgorithmMoon implements Strategy {
+/**
+ * Алгоритм “Мистический”. Для расчета на дату использует среднее
+ * арифметическое из трех последних от этой даты полнолуний.
+ * Для расчета на неделю и месяц первый курс рассчитывается
+ * аналогично предыдущему расчёту на день, а последующие даты рассчитываются
+ * рекуррентно по формуле - значение предыдущей даты
+ * + случайное число от -10% до +10% от значения предыдущей даты.
+ */
+public class MoonAlgorithm implements Algorithm {
+    /**
+     * Список дат полнолуний от 19.12.2021.
+     */
     private final List<LocalDate> fullMoonDates = new ArrayList<>();
 
     {
