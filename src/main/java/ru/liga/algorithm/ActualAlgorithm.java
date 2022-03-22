@@ -1,5 +1,7 @@
 package ru.liga.algorithm;
 
+import ru.liga.exceptions.NotFoundDataException;
+
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,14 +17,20 @@ public class ActualAlgorithm implements Algorithm {
      * @throws NullPointerException если дата сильно впереди.
      */
     @Override
-    public Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, LocalDate date, int period) throws NullPointerException {
+    public Map<LocalDate, Double> getForecast(Map<LocalDate, Double> data, LocalDate date, int period) throws NotFoundDataException {
         Map<LocalDate, Double> forecastData = new TreeMap<>();
 
         for (int i = 0; i < period; i++) {
-            Double averageRate = data.get(date.minusYears(2))
-                    + data.get(date.minusYears(3));
+            Double dateTwoYearsAgo = data.get(date.minusYears(2));
+            Double dateThreeYearsAgo = data.get(date.minusYears(3));
 
-            forecastData.put(date, averageRate);
+            if (dateTwoYearsAgo == null || dateThreeYearsAgo == null) {
+                throw new NotFoundDataException("К сожалению алгоритм \"Актуальный\" не умеет делать прогноз на такое далёкое будущее.");
+            }
+
+            Double rate = dateTwoYearsAgo + dateThreeYearsAgo;
+
+            forecastData.put(date, rate);
             date = date.plusDays(1);
         }
         return forecastData;

@@ -17,14 +17,16 @@ abstract class ServiceCommand extends BotCommand {
      * Отправка ответа пользователю
      */
     void sendAnswer(AbsSender absSender, Long chatId, String commandName, String userName, String text) {
-        SendMessage message = new SendMessage();
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId.toString())
+                .text(text)
+                .build();
         message.enableMarkdown(true);
-        message.setChatId(chatId.toString());
-        message.setText(text);
         try {
             absSender.execute(message);
         } catch (TelegramApiException e) {
-            log.error("Ошибка {}. Команда {}. Пользователь: {}", e.getMessage(), commandName, userName, e);
+            log.error("Ошибка {}. Команда {}. Пользователь: {}",
+                    e.getMessage(), commandName, userName, e);
         }
     }
 }
