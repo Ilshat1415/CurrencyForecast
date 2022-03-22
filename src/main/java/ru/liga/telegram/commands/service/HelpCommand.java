@@ -20,8 +20,8 @@ public class HelpCommand extends ServiceCommand {
     public void execute(AbsSender absSender, User user, Chat chat, String[] strings) {
         String userName = Utils.getUserName(user);
 
-        log.debug("Пользователь {}. Начато выполнение команды {}", userName,
-                this.getCommandIdentifier());
+        log.debug("Пользователь {}. Начато выполнение команды {}",
+                userName, this.getCommandIdentifier());
         sendAnswer(absSender, chat.getId(), this.getCommandIdentifier(), userName,
                 "Я бот, который делает прогноз курса валют.\n\n" +
                         "Для получения прогноза введите запрос по шаблону:\n" +
@@ -35,7 +35,7 @@ public class HelpCommand extends ServiceCommand {
                         " \\* - можно указать сразу несколько валют через запятую без пробелов.\n\n" +
                         "Пример запроса:\n" +
                         "rate USD -date tomorrow -alg actual");
-        log.debug("Пользователь {}. Завершено выполнение команды {}", userName,
-                this.getCommandIdentifier());
+        log.debug("Пользователь {}. Завершено выполнение команды {}",
+                userName, this.getCommandIdentifier());
     }
 }

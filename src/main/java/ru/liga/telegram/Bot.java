@@ -3,15 +3,11 @@ package ru.liga.telegram;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.liga.telegram.commands.service.HelpCommand;
 import ru.liga.telegram.commands.service.StartCommand;
-
-import java.io.File;
 
 /**
  * Это телеграмм-бот.
@@ -29,7 +25,7 @@ public class Bot extends TelegramLongPollingCommandBot {
     /**
      * Объект обрабатывающий запросы - не команды.
      */
-    private final NonCommand nonCommand;
+    private final RateCommand rateCommand;
 
     /**
      * Создание телеграмм-бота.
@@ -44,12 +40,12 @@ public class Bot extends TelegramLongPollingCommandBot {
         this.BOT_TOKEN = BOT_TOKEN;
         log.debug("Имя и токен присвоены");
 
-        nonCommand = new NonCommand();
-        log.debug("Класс обработки сообщения, не являющегося командой, создан");
+        rateCommand = new RateCommand();
+        log.debug("Класс обработки rate запросов");
         register(new StartCommand("start", "Старт"));
         log.debug("Команда start создана");
         register(new HelpCommand("help", "Помощь"));
-        log.debug("Команда start создана");
+        log.debug("Команда help создана");
 
         log.info("Бот создан!");
     }
@@ -64,38 +60,41 @@ public class Bot extends TelegramLongPollingCommandBot {
         if (update.hasMessage()) {
             Message message = update.getMessage();
             if (message.hasText()) {
-                Object answer = nonCommand.execute(Utils.getUserName(message), message.getText());
-                log.info("Пользователь {}. Запрос {} обработан.", Utils.getUserName(message), message.getText());
+                String userName = Utils.getUserName(message);
+                String text = message.getText();
+                Long chatId = message.getChatId();
 
-                setAnswer(message.getChatId(), Utils.getUserName(message), answer);
+                try {
+                    TelegramRateRequest request = new TelegramRateRequest(text);
+                    log.info("Пользователь {}. Запрос {} принят на обработку.", userName, text);
+
+                    rateCommand.execute(this, chatId.toString(), userName, request);
+                    log.info("Пользователь {}. Запрос {} обработан.", userName, text);
+
+                } catch (IllegalArgumentException e) {
+                    log.debug("Пользователь {}. Запрос не был принят.", userName);
+                    sendMessage(chatId, userName, e.getMessage());
+                }
             }
         }
     }
 
     /**
-     * Отправка ответа пользователю.
+     * Отправка сообщения пользователю.
      *
      * @param chatId   id чата
      * @param userName имя пользователя
-     * @param result   результат прогноза
+     * @param text     текст сообщения
      */
-    private void setAnswer(Long chatId, String userName, Object result) {
+    private void sendMessage(Long chatId, String userName, String text) {
         try {
-            if (result instanceof String) {
-                SendMessage answer = new SendMessage();
-                answer.setText((String) result);
-                answer.setChatId(chatId.toString());
-                execute(answer);
-            } else if (result instanceof File) {
-                SendPhoto answer = new SendPhoto();
-                answer.setPhoto(new InputFile((File) result));
-                answer.setChatId(chatId.toString());
-                execute(answer);
-            }
-            log.info("Ответ отправлен пользователю {}.", userName);
+            execute(SendMessage.builder()
+                    .chatId(chatId.toString())
+                    .text(text)
+                    .build());
         } catch (TelegramApiException e) {
-            log.error("Ошибка {}. Сообщение, не являющееся командой. Пользователь: {}", e.getMessage(),
-                    userName, e);
+            log.error("Ошибка {}. Сообщение, не являющееся командой. Пользователь: {}",
+                    e.getMessage(), userName, e);
         }
     }
 
